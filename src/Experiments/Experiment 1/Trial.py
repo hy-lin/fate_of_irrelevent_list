@@ -3,23 +3,19 @@ Created by Hsuan-Yu Lin @ 09.08.2017
 '''
 import numpy
 
-def getText(word_ind):
-    pass
-
 class Stimulus(object):
-    def __init__(self, word_ind, present_position, cue_color):
+    def __init__(self, word_ind, present_position):
         self.word_ind = word_ind
         self.present_position = present_position
-        self.cue_color = cue_color
 
-    def draw(self, display):
+    def draw(self, display, getText):
         output_pos = display.getStimulusPos(self.present_position)
         output_text = getText(self.word_ind)
         
-        display.drawText(output_text, output_pos)
+        display.drawText(output_text, output_pos[0], output_pos[1])
 
     def __str__(self):
-        return '{}\t{}\t{}'.format(self.word_ind, self.present_position, self.cue_color)
+        return '{}\t{}\t'.format(self.word_ind, self.present_position)
 
 class Cue(object):
     def __init__(self, color, position):
@@ -86,37 +82,129 @@ class OSQuestion(object):
 
         return True
 
+    def draw(self, display):
+        display.drawText(self.question)
+
     def __str__(self):
         return '{}\t{}'.format(self.question, self.correctness)
 
+    def __eq__(self, target):
+        return str(self) == str(target)
+
 
 class Trial(object):
-    def __init__(self, stimuli, CSI, CL_manipulation, relevent_cue, probe, exp_setting):
-        self.stimuli = stimuli
+    def __init__(self, relevent_stimuli, irrelevent_stimuli, CSI, CL_manipulation, relevent_cue, probe_type, probe, exp_setting):
+        self.relevent_stimuli = relevent_stimuli
+        self.irrelevent_stimuli = irrelevent_stimuli
         self.exp_setting = exp_setting
 
-        self.cues = [Cue('green', 'top'), Cue('red', 'botton')]
+        self.cues = [Cue('green', 'top'), Cue('red', 'bottom')]
         self.CSI = CSI
         self.CL_manipulation = CL_manipulation
         self.relevent_cue = relevent_cue
+        self.probe_type = probe_type
         self.probe = probe
-
+            
         self._getOSQuestions()
 
-    def run(self, display, recorder):
+    def run(self, display, recorder, getText, logger):
         display.clear()
 
-        for stimulus in self.stimuli:
-            stimulus.draw(display)
+        for relevent_stimulus in self.relevent_stimuli:
+            relevent_stimulus.draw(display, getText)
+
+        for irrelevent_stimulus in self.irrelevent_stimuli:
+            irrelevent_stimulus.draw(display, getText)
 
         for cue in self.cues:
             cue.draw(display)
 
+        display.refresh()
+        logger('Displaying stimuli')
         display.wait(self.exp_setting.stimulus_onset_duration)
 
+        logger('Begin CSI')
+        t0 = display.getTicks()
+        ct = display.getTicks() - t0
+
+        OS_index = 0
+        while ct < self.CSI:
+            display.clear()
+            self.relevent_cue.draw(display)
+
+            ct = display.getTicks() - t0
+            try:
+                if ct >= self.OS_schedule[OS_index+1]:
+                    logger('Participant failed to make a response for OS')
+                    self.OS_responses.append(False)
+                    OS_index += 1
+
+                elif ct >= self.OS_schedule[OS_index]:
+                    self.OSs[OS_index].draw(display)
+
+                    OS_response = recorder.getKeyboard(self.exp_setting.response_keys)
+                    if OS_response is not None:
+                        logger('Participant made a response for OS')
+                        correctness = int(OS_response == 'right') == self.OSs[OS_index].correctness
+                        self.OS_responses.append(correctness)
+                        OS_index += 1
+            except:
+                pass
+
+            keys = recorder.getKeyboard(self.exp_setting.escape_key)
+            if keys is not None:
+                logger('Because Danielle demands it')
+                raise KeyboardInterrupt('Because Danielle demands it')
+  
+
+            display.refresh()
+            display.waitFPS()
+
         display.clear()
+        self.relevent_cue.draw(display)
+        self.probe.draw(display, getText)
+        display.refresh()
+
+        logger('Probe displayed')
+        self.response, self.rt = recorder.recordKeyboard(self.exp_setting.response_keys)
+        logger('Recognition response made')
+        display.clear()
+        display.refresh()
+        display.wait(self.exp_setting.inter_trial_interval)
+        logger('Exiting trial, gooodbye.')
 
     def _getOSQuestions(self):
-        OS = []
+        self.OS_schedule = numpy.linspace(0, self.CSI, self.CL_manipulation+1)
+        self.OS_schedule[-1] = self.CSI + 8000
+
+        self.OSs = []
+        self.OS_responses = []
         for OS_index in range(self.CL_manipulation):
-            pass
+            self.OSs.append(OSQuestion())
+            try:
+                if self.OSs[OS_index] == self.OSs[OS_index-1]:
+                    self.OSs[OS_index] = OSQuestion()
+            except:
+                pass
+
+    def __str__(self):
+        output_string = ''
+        output_string += '{}\t{}\t{}\t'.format(self.CSI, self.CL_manipulation, self.probe_type)
+        output_string += '{}\t'.format(self.relevent_cue)
+
+        for relelvent_stimulus in self.relevent_stimuli:
+            output_string += '{}\t'.format(relelvent_stimulus)
+
+        for irrelelvent_stimulus in self.irrelevent_stimuli:
+            output_string += '{}\t'.format(irrelelvent_stimulus)
+
+        output_string += '{}\t'.format(self.probe)
+        output_string += '{}\t{}\t{}'.format(
+            self.response,
+            self.rt,
+            sum(self.OS_responses)
+        )
+
+        return output_string
+
+

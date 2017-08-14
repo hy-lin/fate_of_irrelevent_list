@@ -21,12 +21,12 @@ class Display(object):
     '''
 
 
-    def __init__(self, RESOURCES, exp_parameters):
+    def __init__(self, RESOURCES, exp_setting):
         '''
         Constructor
         '''
         self.RESOURCES = RESOURCES
-        self.exp_parameters = exp_parameters
+        self.exp_setting = exp_setting
         
         sdl2.ext.init()
         
@@ -43,7 +43,7 @@ class Display(object):
         
         sdl2.sdlttf.TTF_Init()
         self.font = None
-        self.font_size = self.exp_parameters.font_size
+        self.font_size = self.exp_setting.font_size
         
         self.running = True
     
@@ -63,6 +63,9 @@ class Display(object):
             
     def waitFPS(self):
         sdl2.sdlgfx.SDL_framerateDelay(self.fps)
+
+    def getTicks(self):
+        return sdl2.timer.SDL_GetTicks()
     
     def drawThickLine(self, x0, y0, x1, y1, thickness, color = sdl2.ext.Color(0, 0, 0)):
         x0, y0, x1, y1, thickness = int(x0), int(y0), int(x1), int(y1), int(thickness)
@@ -142,3 +145,21 @@ class Display(object):
     def drawSurface(self, src_surface, dst_rect):
         sdl2.surface.SDL_BlitSurface(src_surface, None, self.window_surface, dst_rect)
 
+    def getStimulusPos(self, position_index):
+        return self.exp_setting.stimulus_positions[position_index]
+
+    def getCuePos(self, position):
+        x0 = int(self.w / 2 - self.exp_setting.cue_frame_width / 2)
+        x1 = int(self.w / 2 + self.exp_setting.cue_frame_width / 2)
+
+        if position == 'top':
+            y0 = self.exp_setting.cue_top_y - int(self.exp_setting.cue_frame_height / 2)
+            y1 = self.exp_setting.cue_top_y + int(self.exp_setting.cue_frame_height / 2)
+        elif position == 'bottom':
+            y0 = self.exp_setting.cue_bottom_y - int(self.exp_setting.cue_frame_height / 2)
+            y1 = self.exp_setting.cue_bottom_y + int(self.exp_setting.cue_frame_height / 2)
+        elif position == 'middle':
+            y0 = int(self.h / 2 - self.exp_setting.cue_frame_height / 2)
+            y1 = int(self.h / 2 + self.exp_setting.cue_frame_height / 2)
+
+        return (x0, y0, x1, y1)
