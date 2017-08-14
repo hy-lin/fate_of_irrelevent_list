@@ -69,6 +69,8 @@ class Display(object):
         sdl2.sdlgfx.thickLineRGBA(self.renderer.renderer, x0, y0, x1, y1, thickness, color.r, color.g, color.b, color.a)
     
     def drawThickFrame(self, x0, y0, x1, y1, thickness, color = sdl2.ext.Color(0, 0, 0)):
+        if type(color) is not sdl2.SDL_Color:
+            color = sdl2.SDL_Color(color[0], color[1], color[2])
         x0, y0, x1, y1, thickness, mergin = int(x0), int(y0), int(x1), int(y1), int(thickness), int(thickness/2)
         x0, y0, x1, y1 = x0-mergin, y0-mergin, x1+mergin, y1+mergin
         sdl2.sdlgfx.thickLineRGBA(self.renderer.renderer, x0, y0, x1, y0, thickness, color.r, color.g, color.b, color.a)
