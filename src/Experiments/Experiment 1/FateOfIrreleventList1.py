@@ -85,7 +85,6 @@ class Experiment(object):
     def _getTrial(self, trial_index):
         probe_type, cue_color, CL_manipulation = self._getConditions(trial_index)
 
-        CSI = 5000
 
         words = self._getWordIndex(7)
         relevent_stimulus = []
@@ -117,7 +116,7 @@ class Experiment(object):
         return Trial.Trial(
             relevent_stimulus,
             irrelevent_stimulus,
-            CSI, CL_manipulation,
+            CL_manipulation,
             relevent_cue, 
             probe_type,
             probe,
@@ -201,12 +200,10 @@ class Experiment(object):
     def doBreak(self, n_block):
         self.log('taking a break')
 
-        self.display.drawText('Block: {}/10 passed.'.format(n_block))
-        self.display.refresh()
-        self.display.wait(1000)
+        self.display.drawText('Das war Block {} von 10.'.format(n_block))
 
-        self.display.clear()
-        self.display.drawText('Gelegenheit fur kurze Pause. Weiter mit Leertaste.')
+        self.display.drawText('Gelegenheit fur kurze Pause. Weiter mit Leertaste.',
+        y = self.display.window_surface.h/2 + 100)
         self.display.refresh()
         self.recorder.recordKeyboard(['space'])
         self.display.clear(refresh = True)
@@ -222,7 +219,7 @@ class Experiment(object):
         self.recorder.recordKeyboard(['space'])
         
         self.log('exiting program.')
-        self.logger.close()
+        self.data_log.close()
 
     def save2file(self, trial):
         self.data_file.write(

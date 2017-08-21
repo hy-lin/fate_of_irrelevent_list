@@ -21,14 +21,16 @@ class ExpSetting(object):
         ]
 
         # cue related
-        self.cue_frame_height_unscaled = 200
+        self.cue_frame_height_unscaled = 100
         self.cue_frame_width_unscaled = 1000
         self.cue_top_y_unscale = 240
         self.cue_bottom_y_unscale = 480
 
         # time related
         self.inter_trial_interval = 500
-        self.stimulus_onset_duration = 5000
+        self.stimulus_onset_duration = 4000
+        self.CSI = 6000
+        self.max_os_response_time = 1250
 
         # keyboard related
         self.response_keys = ['right', 'left']

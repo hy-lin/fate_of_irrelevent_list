@@ -93,13 +93,12 @@ class OSQuestion(object):
 
 
 class Trial(object):
-    def __init__(self, relevent_stimuli, irrelevent_stimuli, CSI, CL_manipulation, relevent_cue, probe_type, probe, exp_setting):
+    def __init__(self, relevent_stimuli, irrelevent_stimuli, CL_manipulation, relevent_cue, probe_type, probe, exp_setting):
         self.relevent_stimuli = relevent_stimuli
         self.irrelevent_stimuli = irrelevent_stimuli
         self.exp_setting = exp_setting
 
         self.cues = [Cue('green', 'top'), Cue('red', 'bottom')]
-        self.CSI = CSI
         self.CL_manipulation = CL_manipulation
         self.relevent_cue = relevent_cue
         self.probe_type = probe_type
@@ -128,28 +127,29 @@ class Trial(object):
         ct = display.getTicks() - t0
 
         OS_index = 0
-        while ct < self.CSI:
+        while ct < self.exp_setting.CSI:
             display.clear()
             self.relevent_cue.draw(display)
 
             ct = display.getTicks() - t0
-            try:
-                if ct >= self.OS_schedule[OS_index+1]:
-                    logger('Participant failed to make a response for OS')
-                    self.OS_responses.append(False)
+            if ct >= self.OS_schedule[OS_index] + self.exp_setting.max_os_response_time:
+                logger('Participant failed to make a response for OS')
+                self.OS_responses.append(False)
+                OS_index += 1
+                display.drawText('Zu langsam!')
+                display.refresh()
+                display.wait(200)
+
+            elif ct >= self.OS_schedule[OS_index]:
+                self.OSs[OS_index].draw(display)
+
+                OS_response = recorder.getKeyboard(self.exp_setting.response_keys)
+                if OS_response is not None:
+                    logger('Participant made a response for OS')
+                    correctness = int(OS_response == 'right') == self.OSs[OS_index].correctness
+                    self.OS_responses.append(correctness)
                     OS_index += 1
 
-                elif ct >= self.OS_schedule[OS_index]:
-                    self.OSs[OS_index].draw(display)
-
-                    OS_response = recorder.getKeyboard(self.exp_setting.response_keys)
-                    if OS_response is not None:
-                        logger('Participant made a response for OS')
-                        correctness = int(OS_response == 'right') == self.OSs[OS_index].correctness
-                        self.OS_responses.append(correctness)
-                        OS_index += 1
-            except:
-                pass
 
             keys = recorder.getKeyboard(self.exp_setting.escape_key)
             if keys is not None:
@@ -174,8 +174,8 @@ class Trial(object):
         logger('Exiting trial, gooodbye.')
 
     def _getOSQuestions(self):
-        self.OS_schedule = numpy.linspace(0, self.CSI, self.CL_manipulation+1)
-        self.OS_schedule[-1] = self.CSI + 8000
+        self.OS_schedule = numpy.linspace(0, self.exp_setting.CSI, self.CL_manipulation+1)
+        self.OS_schedule[-1] = self.exp_setting.CSI + 8000
 
         self.OSs = []
         self.OS_responses = []
@@ -189,7 +189,7 @@ class Trial(object):
 
     def __str__(self):
         output_string = ''
-        output_string += '{}\t{}\t{}\t'.format(self.CSI, self.CL_manipulation, self.probe_type)
+        output_string += '{}\t{}\t{}\t'.format(self.exp_setting.CSI, self.CL_manipulation, self.probe_type)
         output_string += '{}\t'.format(self.relevent_cue)
 
         for relelvent_stimulus in self.relevent_stimuli:
