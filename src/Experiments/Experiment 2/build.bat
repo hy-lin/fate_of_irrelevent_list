@@ -1,4 +1,4 @@
-pyinstaller FateOfIrreleventList1.py -F -i resources\uzh.ico
+pyinstaller "FateOfIrreleventList2.py" -F -i resources\uzh.ico
 mkdir dist\resources
 copy resources\*.* dist\resources
 mkdir dist\Data
