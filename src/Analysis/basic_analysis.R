@@ -63,19 +63,19 @@ assignCorrectness <- function(data){
 
 filterOutlier <- function(data){
   for (i in 1:length(data$ID)){
-    if (data$RT[i] > 5000){
-      data$Correctness[i] = NaN
-      data$RT[i] = NaN
-    }
+    #if (data$RT[i] > 5000){
+    #  data$Correctness[i] = NaN
+    #  data$RT[i] = NaN
+    #}
     
     if (!is.nan(data$Correctness[i]) && data$Correctness[i] == FALSE){
       data$RT[i] = NaN
     }
     
-    if (data$OSCorrectness[i] / data$CLOperations[i] < 0.6){
-      data$Correctness[i] = NaN
-      data$RT[i] = NaN
-    }
+    #if (data$OSCorrectness[i] / data$CLOperations[i] < 0.6){
+    #  data$Correctness[i] = NaN
+    #  data$RT[i] = NaN
+    #}
   }
   return(data)
 }
@@ -105,11 +105,20 @@ cl.probetype <- anovaBF(PC ~ ProbeType * CLOperations + ID, data=data[data$Probe
 cl.probetype
 cl.probetype[3] / cl.probetype[4]
 
+cl.probetype <- anovaBF(PC ~ ProbeType * CLOperations + ID, data=data, whichRandom = 'ID')
+cl.probetype
+cl.probetype[3] / cl.probetype[4]
+
 ggplot(data=tmp_data) + aes(x=CLOperations, y = RT, linetype = ProbeType, group = ProbeType) + 
   geom_line(position = pd) + 
   geom_errorbar(aes(ymin=RT-RT_SE, ymax=RT+RT_SE), width=.1, position = pd) + 
   geom_point(position = pd)
 
 cl.probetype <- anovaBF(RT ~ ProbeType * CLOperations + ID, data=data[data$ProbeType != 'positive',], whichRandom = 'ID')
+cl.probetype
+cl.probetype[3] / cl.probetype[4]
+
+
+cl.probetype <- anovaBF(RT ~ ProbeType * CLOperations + ID, data=data, whichRandom = 'ID')
 cl.probetype
 cl.probetype[3] / cl.probetype[4]
